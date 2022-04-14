@@ -1,0 +1,1 @@
+C:\Users\Дом\PycharmProjects\RollingCubes\venv\Scripts\pyinstaller --onefile --noconsole main.py 
