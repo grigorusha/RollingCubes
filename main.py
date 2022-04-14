@@ -2,6 +2,7 @@
 import pygame
 from pygame import *
 import random
+import os
 
 # Объявляем переменные
 SIZE_X_START = 3
@@ -9,8 +10,9 @@ SIZE_Y_START = 3
 CUBE_SIZE = 100
 BORDER = 5
 TILE = 10
-PANEL_SIZE = 70
+PANEL_SIZE = 100
 BACKGROUND_COLOR = "#000000"
+GRAY_COLOR = "#808080"
 
 CUBE_COLOR = [("W","#FFFFFF"),("R","#FF0000"),("B","#0000FF"),
               ("Y","#FFFF00"),("P","#800080"),("G","#008000")]
@@ -55,9 +57,41 @@ def next_cubes(top, face):
 
     return face_set
 
+def check_button(place, y, x):
+    if (x >= place.left) and (x <= place.right) and (y >= place.top) and (y <= place.bottom):
+        return True
+    return False
+
+def read_file():
+    x = y = 0
+    level = []
+    with open('level.txt','r') as f:
+        lines = f.readlines()
+        for str in lines:
+            str_mas = []
+            str = str.replace('\n','')
+            while len(str)>=2:
+                sim1 = str[0]
+                sim2 = str[1]
+                str = str[3:]
+                str_mas.append([sim1,sim2])
+            level.append(str_mas)
+            y += 1
+            x = max(x,len(str_mas))
+    return level, y, x
+
+def save_file(level):
+    with open('level.txt', 'w') as f:
+        for str in level:
+            line = ""
+            for cube in str:
+                line += cube[0]+cube[1]+" "
+            f.write(line+"\n")
+
 def main():
     SIZE_X = SIZE_X_START
     SIZE_Y = SIZE_Y_START
+    file_ext = False
 
     random.seed()
     pygame.init()  # Инициация PyGame
@@ -69,8 +103,14 @@ def main():
         WIN_HEIGHT = SIZE_Y * CUBE_SIZE + PANEL_SIZE  # Высота
         DISPLAY = (WIN_WIDTH, WIN_HEIGHT)  # Группируем ширину и высоту в одну переменную
 
-        level = init_level(SIZE_Y, SIZE_X)
+        if file_ext:
+            file_ext = False
+        else:
+            level = init_level(SIZE_Y, SIZE_X)
+        moves_stack = []
         moves = 0
+        scramble_move = 0
+        solved = True
 
         screen = pygame.display.set_mode(DISPLAY)  # Создаем окошко
         pygame.display.set_caption("Rolling Cubes")  # Пишем в шапку
@@ -81,6 +121,8 @@ def main():
         button_reset_place = button_reset.get_rect(topleft=(10, button_y1))
         button_scramble = font.render('Scramble', True, CUBE_COLOR[2][1], CUBE_COLOR[5][1])
         button_scramble_place = button_scramble.get_rect(topleft=(button_reset_place.right+10, button_y1))
+        button_undo = font.render('Undo', True, CUBE_COLOR[2][1], CUBE_COLOR[5][1])
+        button_undo_place = button_undo.get_rect(topleft=(button_scramble_place.right+10, button_y1))
 
         button_y2 = button_reset_place.bottom + 5
         button_minusx = font.render('-', True, CUBE_COLOR[2][1], CUBE_COLOR[5][1])
@@ -96,12 +138,16 @@ def main():
         texty_place = texty.get_rect(topleft=(button_minusy_place.right+3, button_y2))
         button_plusy = font.render('+', True, CUBE_COLOR[2][1], CUBE_COLOR[5][1])
         button_plusy_place = button_plusy.get_rect(topleft=(texty_place.right+3, button_y2))
+        button_open = font.render('Open', True, CUBE_COLOR[2][1], CUBE_COLOR[5][1])
+        button_open_place = button_open.get_rect(topleft=(button_plusy_place.right+10, button_y2))
+        button_save = font.render('Save', True, CUBE_COLOR[2][1], CUBE_COLOR[5][1])
+        button_save_place = button_save.get_rect(topleft=(button_open_place.right+10, button_y2))
 
-        scramble_move = 0
-        solved = True
+        button_y3 = button_minusx_place.bottom + 5
 
         while True:  # Основной цикл программы
             vek = mouse_x = mouse_y = 0
+            undo = False
 
             if scramble_move == 0:
                 timer.tick(10)
@@ -112,25 +158,30 @@ def main():
                 pf = Surface((CUBE_SIZE*SIZE_X, 5))
                 pf.fill(Color("#B88800"))
                 screen.blit(pf, (0, CUBE_SIZE*SIZE_Y+BORDER))
+
+                # text
+                text_moves = font.render('Moves: ' + str(moves), True, CUBE_COLOR[1][1])
+                text_moves_place = text_moves.get_rect(topleft=(10, button_y3))
+                screen.blit(text_moves, text_moves_place)
                 if solved:
-                    text_solved = font.render('Solved', True, CUBE_COLOR[4][1])
+                    text_solved = font.render('Solved', True, CUBE_COLOR[0][1])
                 else:
                     text_solved = font.render('not solved', True, CUBE_COLOR[5][1])
-                text_solved_place = text_solved.get_rect(topleft=(button_scramble_place.right + 10, button_y1))
+                text_solved_place = text_solved.get_rect(topleft=(text_moves_place.right + 10, button_y3))
                 screen.blit(text_solved, text_solved_place)
-                text_moves = font.render('Moves: ' + str(moves), True, CUBE_COLOR[1][1])
-                text_moves_place = text_moves.get_rect(topleft=(button_plusy_place.right + 10, button_y2))
-                screen.blit(text_moves, text_moves_place)
 
                 # button
                 screen.blit(button_reset, button_reset_place)
                 screen.blit(button_scramble, button_scramble_place)
+                screen.blit(button_undo, button_undo_place)
                 screen.blit(button_minusx, button_minusx_place)
                 screen.blit(textx, textx_place)
                 screen.blit(button_plusx, button_plusx_place)
                 screen.blit(button_minusy, button_minusy_place)
                 screen.blit(texty, texty_place)
                 screen.blit(button_plusy, button_plusy_place)
+                screen.blit(button_open, button_open_place)
+                screen.blit(button_save, button_save_place)
 
                 for ev in pygame.event.get():  # Обрабатываем события
                     if (ev.type == QUIT) or (ev.type == KEYDOWN and ev.key == K_ESCAPE):
@@ -150,7 +201,40 @@ def main():
                 vek = random.randint(1,4)
 
             if mouse_x+mouse_y > 0:
-                if mouse_y<CUBE_SIZE*SIZE_Y+BORDER:
+                if mouse_y>CUBE_SIZE*SIZE_Y+BORDER:
+                    if check_button(button_reset_place, mouse_y, mouse_x): # reset
+                        break
+                    elif check_button(button_scramble_place, mouse_y, mouse_x):  # scramble
+                        scramble_move = SIZE_X * SIZE_Y * 100
+                    elif check_button(button_open_place, mouse_y, mouse_x):  # open
+                        level, SIZE_Y, SIZE_X = read_file()
+                        file_ext = True
+                        break
+                    elif check_button(button_save_place, mouse_y, mouse_x):  # save
+                        save_file(level)
+                    elif check_button(button_undo_place, mouse_y, mouse_x): # undo
+                        if len(moves_stack)>0:
+                            vek = moves_stack.pop()
+                            vek = (vek+1) % 4 + 1
+                            moves -= 1
+                            undo = True
+                    elif check_button(button_minusx_place, mouse_y, mouse_x):
+                        if SIZE_X > 2:
+                            SIZE_X -= 1
+                        break
+                    elif check_button(button_plusx_place, mouse_y, mouse_x):
+                        if SIZE_X < 10:
+                            SIZE_X += 1
+                        break
+                    elif check_button(button_minusy_place, mouse_y, mouse_x):
+                        if SIZE_Y > 2:
+                            SIZE_Y -= 1
+                        break
+                    elif check_button(button_plusy_place, mouse_y, mouse_x):
+                        if SIZE_Y < 10:
+                            SIZE_Y += 1
+                        break
+                else:
                     xx = mouse_x // CUBE_SIZE
                     xx2 = mouse_x % CUBE_SIZE
                     if xx2>0:
@@ -163,7 +247,7 @@ def main():
                     xx -= 1
                     yy -= 1
                     cube = level[yy][xx]
-                    if cube[0] != " ":
+                    if (cube[0] != " ")and(cube[0] != "X"):
                         if xx != 0:
                             cube_test = level[yy][xx-1]
                             if cube_test[0] == " ":
@@ -180,33 +264,6 @@ def main():
                             cube_test = level[yy+1][xx]
                             if cube_test[0] == " ":
                                 vek = 3
-                else:
-                    if (mouse_x>=button_reset_place.left)and(mouse_x<=button_reset_place.right) and (mouse_y>=button_reset_place.top)and(mouse_y<=button_reset_place.bottom):
-                        # reset
-                        break
-                    elif (mouse_x>=button_scramble_place.left)and(mouse_x<=button_scramble_place.right) and (mouse_y>=button_scramble_place.top)and(mouse_y<=button_scramble_place.bottom):
-                        # scramble
-                        scramble_move = SIZE_X*SIZE_Y*100
-                    elif (mouse_x>=button_minusx_place.left)and(mouse_x<=button_minusx_place.right) and (mouse_y>=button_minusx_place.top)and(mouse_y<=button_minusx_place.bottom):
-                        # scramble
-                        if SIZE_X>2:
-                            SIZE_X -= 1
-                        break
-                    elif (mouse_x>=button_plusx_place.left)and(mouse_x<=button_plusx_place.right) and (mouse_y>=button_plusx_place.top)and(mouse_y<=button_plusx_place.bottom):
-                        # scramble
-                        if SIZE_X<10:
-                            SIZE_X += 1
-                        break
-                    elif (mouse_x>=button_minusy_place.left)and(mouse_x<=button_minusy_place.right) and (mouse_y>=button_minusy_place.top)and(mouse_y<=button_minusy_place.bottom):
-                        # scramble
-                        if SIZE_Y>2:
-                            SIZE_Y -= 1
-                        break
-                    elif (mouse_x>=button_plusy_place.left)and(mouse_x<=button_plusy_place.right) and (mouse_y>=button_plusy_place.top)and(mouse_y<=button_plusy_place.bottom):
-                        # scramble
-                        if SIZE_Y<10:
-                            SIZE_Y += 1
-                        break
 
             if vek!=0:
                 fl = False
@@ -242,24 +299,28 @@ def main():
                 if fl:
                     cube = level[ny][nx]
 
-                    face_set = next_cubes(cube[0], cube[1])
-                    face_set2 = next_cubes(face_set[4-vek][0], cube[0])
-                    if vek == 1: # UP
-                        cube = [face_set2[3][0], face_set2[2][0]]
-                    elif vek == 3:  # DOWN
-                        cube = [face_set2[3][0], face_set2[0][0]]
-                    elif vek == 2:  # LEFT
-                        cube = [face_set2[3][0], cube[1]]
-                    elif vek == 4: # RIGHT
-                        cube = [face_set2[3][0] , cube[1]]
+                    if cube[0]!="X":
+                        face_set = next_cubes(cube[0], cube[1])
+                        face_set2 = next_cubes(face_set[4-vek][0], cube[0])
+                        if vek == 1: # UP
+                            cube = [face_set2[3][0], face_set2[2][0]]
+                        elif vek == 3:  # DOWN
+                            cube = [face_set2[3][0], face_set2[0][0]]
+                        elif vek == 2:  # LEFT
+                            cube = [face_set2[3][0], cube[1]]
+                        elif vek == 4: # RIGHT
+                            cube = [face_set2[3][0] , cube[1]]
 
-                    level[ny][nx] = [" ", " "]
-                    level[nyp][nxp] = cube
+                        level[ny][nx] = [" ", " "]
+                        level[nyp][nxp] = cube
 
-                    moves += 1
+                        if not undo:
+                            moves += 1
+                            moves_stack.append(vek)
 
             if scramble_move != 0:
                 scramble_move -= 1
+                moves_stack = []
                 moves = 0
                 continue
 
@@ -271,6 +332,10 @@ def main():
                         pf = Surface((CUBE_SIZE, CUBE_SIZE))
                         pf.fill(Color(BACKGROUND_COLOR))
                         screen.blit(pf, (x, y))
+                    elif cube[0]=="X":
+                        pf = Surface((CUBE_SIZE-BORDER*2, CUBE_SIZE-BORDER*2))
+                        pf.fill(Color(GRAY_COLOR))
+                        screen.blit(pf, (x+BORDER, y+BORDER))
                     else:
                         if (cube[0]!="W")or(cube[1]!="B"):
                             solved = False
