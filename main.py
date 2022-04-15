@@ -10,6 +10,7 @@ SIZE_Y_START = 3
 CUBE_SIZE = 100
 BORDER = 5
 TILE = 10
+SHIFT = 3
 PANEL_SIZE = 100
 BACKGROUND_COLOR = "#000000"
 GRAY_COLOR = "#808080"
@@ -351,36 +352,41 @@ def main():
                         face_set = next_cubes(cube[0],cube[1])
 
                         # передняя плитка
-                        pf = Surface((CUBE_SIZE-BORDER*2-TILE*2, TILE))
                         for nn,COLOR_ONE in enumerate(CUBE_COLOR):
                             if COLOR_ONE[0]==face_set[0][0]:
-                                pf.fill(Color(COLOR_ONE[1]))
+                                #pf.fill(Color(COLOR_ONE[1]))
+                                draw.polygon(screen,COLOR_ONE[1], [[x+BORDER+TILE, y+CUBE_SIZE-BORDER-TILE],
+                                                                   [x+BORDER+TILE+CUBE_SIZE-BORDER*2-TILE*2, y+CUBE_SIZE-BORDER-TILE],
+                                                                   [x+BORDER+TILE+CUBE_SIZE-BORDER*2-TILE*2-SHIFT, y+CUBE_SIZE-BORDER-TILE+TILE],
+                                                                   [x+BORDER+TILE+SHIFT, y+CUBE_SIZE-BORDER-TILE+TILE]] )
                                 break
-                        screen.blit(pf, (x+BORDER+TILE, y+CUBE_SIZE-BORDER-TILE))
 
                         # левая плитка
-                        pf = Surface((TILE, CUBE_SIZE-BORDER*2-TILE*2))
                         for nn,COLOR_ONE in enumerate(CUBE_COLOR):
                             if COLOR_ONE[0]==face_set[1][0]:
-                                pf.fill(Color(COLOR_ONE[1]))
+                                draw.polygon(screen,COLOR_ONE[1], [[x+BORDER, y+BORDER+TILE+SHIFT],
+                                                                   [x+BORDER+TILE, y+BORDER+TILE],
+                                                                   [x+BORDER+TILE, y+BORDER+TILE+CUBE_SIZE-BORDER*2-TILE*2],
+                                                                   [x+BORDER, y+BORDER+TILE+CUBE_SIZE-BORDER*2-TILE*2-SHIFT]] )
                                 break
-                        screen.blit(pf, (x+BORDER, y+BORDER+TILE))
 
                         # задняя плитка
-                        pf = Surface((CUBE_SIZE-BORDER*2-TILE*2, TILE))
                         for nn,COLOR_ONE in enumerate(CUBE_COLOR):
                             if COLOR_ONE[0]==face_set[2][0]:
-                                pf.fill(Color(COLOR_ONE[1]))
+                                draw.polygon(screen,COLOR_ONE[1], [[x+BORDER+TILE+SHIFT, y+BORDER],
+                                                                   [x+BORDER+TILE+CUBE_SIZE-BORDER*2-TILE*2-SHIFT, y+BORDER],
+                                                                   [x+BORDER+TILE+CUBE_SIZE-BORDER*2-TILE*2, y+BORDER+TILE],
+                                                                   [x+BORDER+TILE, y+BORDER+TILE]] )
                                 break
-                        screen.blit(pf, (x+BORDER+TILE, y+BORDER))
 
                         # правая плитка
-                        pf = Surface((TILE, CUBE_SIZE-BORDER*2-TILE*2))
                         for nn,COLOR_ONE in enumerate(CUBE_COLOR):
                             if COLOR_ONE[0]==face_set[3][0]:
-                                pf.fill(Color(COLOR_ONE[1]))
+                                draw.polygon(screen,COLOR_ONE[1], [[x+CUBE_SIZE-BORDER-TILE, y+BORDER+TILE],
+                                                                   [x+CUBE_SIZE-BORDER-TILE+TILE, y+BORDER+TILE+SHIFT],
+                                                                   [x+CUBE_SIZE-BORDER-TILE+TILE, y+BORDER+TILE+CUBE_SIZE-BORDER*2-TILE*2-SHIFT],
+                                                                   [x+CUBE_SIZE-BORDER-TILE, y+BORDER+TILE+CUBE_SIZE-BORDER*2-TILE*2]] )
                                 break
-                        screen.blit(pf, (x+CUBE_SIZE-BORDER-TILE, y+BORDER+TILE))
 
                     x += CUBE_SIZE  # блоки платформы ставятся на ширине блоков
                 y += CUBE_SIZE  # то же самое и с высотой
