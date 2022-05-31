@@ -141,6 +141,7 @@ def main():
         # инициализация окна
         screen = pygame.display.set_mode(DISPLAY)  # Создаем окошко
         pygame.display.set_caption("Rolling Cubes")  # Пишем в шапку
+        pygame.display.set_icon(pygame.image.load('RollingCubes.ico'))
         screen.fill(BACKGROUND_COLOR) # Заливаем поверхность сплошным цветом
 
         # инициализация всех кнопок
